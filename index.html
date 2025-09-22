@@ -441,7 +441,7 @@
    FIREBASE CONFIGURATION
    ======================= */
 const firebaseConfig = {
-    apiKey: "AIzaSyDKKw1SyUrVEcE725-OxVXRW0N0ayyQa_I",
+    apiKey: "AlzaSyDKKw1SyUrVEcE725-OxVXRW0N0ayyQa_l",
     authDomain: "rekap-over-time.firebaseapp.com",
     projectId: "rekap-over-time",
     storageBucket: "rekap-over-time.firebasestorage.app",
@@ -453,18 +453,22 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-// Enable offline persistence
-const firestoreSettings = {
-  cache: {
-    sizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-  }
-};
+
+// === PERBAIKAN: Konfigurasi Firestore cache dengan merge: true ===
+// Mengatur ukuran cache Firestore dengan benar untuk menghindari error "overriding the original host"
 try {
-  db.settings(firestoreSettings);
-  console.log("Firestore persistence enabled with new settings");
+  db.settings({
+    cache: {
+      sizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+    },
+    merge: true // Ini adalah kunci untuk menghindari error
+  });
+  console.log("Firestore cache settings applied successfully");
 } catch (err) {
-  console.log("Persistence settings failed: ", err);
-}  
+  console.warn("Firestore cache settings failed: ", err);
+}
+// === AKHIR PERBAIKAN ===
+
 /* =======================
    Data & DOM references
    ======================= */
@@ -552,7 +556,7 @@ let masterOutputListener = null;
 // Variabel untuk menyimpan data user saat ini
 let currentUserData = null;
 /* ========== Helpers ========== */
-function initUsers(){ 
+function initUsers(){
   // Tidak perlu inisialisasi users di localStorage lagi
   // Users akan diambil dari Firebase Auth dan Firestore
 }
@@ -590,29 +594,25 @@ function positionToggleButton(){
 function login(){
   const email = emailInput.value;
   const password = passwordInput.value;
-  if(!email || !password){ 
+  if(!email || !password){
     document.getElementById('login-error').textContent = 'Isi email & password.';
-    return; 
+    return;
   }
-  
   auth.signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const user = userCredential.user;
-      
       // Dapatkan data user dari Firestore
       return db.collection("users").doc(user.uid).get()
         .then((doc) => {
           if (doc.exists) {
             const userData = doc.data();
             currentUserData = userData;
-            
             // Simpan informasi user di localStorage
             localStorage.setItem('loggedInUser', userData.name || email);
             localStorage.setItem('userEmail', email);
             localStorage.setItem('userRole', userData.role || 'pic');
             localStorage.setItem('userId', user.uid);
             localStorage.setItem('loginTime', new Date().toISOString());
-            
             showAppAfterLogin();
           } else {
             // Jika user tidak ada di Firestore, buat data baru
@@ -622,7 +622,6 @@ function login(){
               role: 'pic', // Default role adalah pic
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            
             return db.collection("users").doc(user.uid).set(newUserData)
               .then(() => {
                 currentUserData = newUserData;
@@ -631,7 +630,6 @@ function login(){
                 localStorage.setItem('userRole', newUserData.role);
                 localStorage.setItem('userId', user.uid);
                 localStorage.setItem('loginTime', new Date().toISOString());
-                
                 showAppAfterLogin();
               });
           }
@@ -659,9 +657,7 @@ function showAppAfterLogin(){
   const userName = localStorage.getItem('loggedInUser');
   const userRole = localStorage.getItem('userRole');
   const userEmail = localStorage.getItem('userEmail');
-  
   if(!userName) return;
-  
   // show sidebar and keep toggle visible
   document.getElementById('sidebar').classList.remove('hidden');
   toggleBtn.classList.remove('hidden');
@@ -674,7 +670,6 @@ function showAppAfterLogin(){
   loginSection.classList.add('hidden');
   // hide all tab contents first
   document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-  
   if(userRole === 'admin'){
     document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'block');
     tabRekapAdmin.classList.remove('hidden');
@@ -744,18 +739,18 @@ function simpanLembur(){
   // Simpan ke Firebase
   db.collection("lembur").add(data)
     .then((docRef) => {
-      pesan.textContent = '✅ Data berhasil disimpan.'; 
+      pesan.textContent = '✅ Data berhasil disimpan.';
       pesan.className='success';
       // Clear form fields
-      jamMulai.value=''; 
-      jamSelesai.value=''; 
-      volumeInput.value=''; 
+      jamMulai.value='';
+      jamSelesai.value='';
+      volumeInput.value='';
       uraianTugas.value='';
       generatePlantDropdowns();
     })
     .catch((error) => {
       console.error("Error saving document: ", error);
-      pesan.textContent = '❌ Gagal menyimpan data.'; 
+      pesan.textContent = '❌ Gagal menyimpan data.';
       pesan.className='';
     });
 }
@@ -825,13 +820,13 @@ function exportToExcel(){
     snapshot.forEach(doc => {
       const d = doc.data();
       ws.push([
-        d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam, 
-        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '', 
+        d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam,
+        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '',
         d.lastUpdate || '', d.updatedBy || ''
       ]);
     });
     const sheet = XLSX.utils.aoa_to_sheet(ws);
-    const wb = XLSX.utils.book_new(); 
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, sheet, 'Rekap');
     XLSX.writeFile(wb, `Rekap_${userName}_${new Date().toISOString().slice(0,10)}.xlsx`);
   });
@@ -903,7 +898,7 @@ function saveEditedData(){
   if(!editingContext) return;
   const { id, pic } = editingContext;
   // calculate totalJam if times given
-  const mulai = editJamMulai.value; 
+  const mulai = editJamMulai.value;
   const selesai = editJamSelesai.value;
   let totalJam = calcTotalJamFromTimes(mulai, selesai).toFixed(2);
   const updatedData = {
@@ -928,10 +923,10 @@ function saveEditedData(){
     });
 }
 /* close modal */
-function closeEditModal(){ 
-  editingContext=null; 
-  editModal.classList.remove('show'); 
-  editModal.style.display='none'; 
+function closeEditModal(){
+  editingContext=null;
+  editModal.classList.remove('show');
+  editModal.style.display='none';
 }
 /* delete data */
 function deleteDataAdmin(id, pic){
@@ -948,7 +943,7 @@ function deleteDataAdmin(id, pic){
 /* ========== MASTER OUTPUT / SUMMARY ========== */
 function tampilkanMasterOutput(){
   const sel = masterOutputPic.value || 'all';
-  const start = masterOutputStartDate.value; 
+  const start = masterOutputStartDate.value;
   const end = masterOutputEndDate.value;
   let query = db.collection("lembur").orderBy("tanggal", "desc");
   if (sel !== 'all') {
@@ -982,7 +977,7 @@ function tampilkanMasterOutput(){
 }
 function exportMasterOutputToExcel(){
   const sel = masterOutputPic.value || 'all';
-  const start = masterOutputStartDate.value; 
+  const start = masterOutputStartDate.value;
   const end = masterOutputEndDate.value;
   let query = db.collection("lembur").orderBy("tanggal", "desc");
   if (sel !== 'all') {
@@ -998,13 +993,13 @@ function exportMasterOutputToExcel(){
     snapshot.forEach(doc => {
       const d = doc.data();
       ws.push([
-        d.pic, d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam, 
-        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '', 
+        d.pic, d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam,
+        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '',
         d.lastUpdate || '', d.updatedBy || ''
       ]);
     });
     const sheet = XLSX.utils.aoa_to_sheet(ws);
-    const wb = XLSX.utils.book_new(); 
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, sheet, 'Rekap');
     XLSX.writeFile(wb, `Rekap_Master_${new Date().toISOString().slice(0,10)}.xlsx`);
   });
@@ -1012,7 +1007,7 @@ function exportMasterOutputToExcel(){
 /* Master Summary */
 function tampilkanMasterSummary(){
   const sel = masterSummaryPic.value || 'all';
-  const start = masterSummaryStartDate.value; 
+  const start = masterSummaryStartDate.value;
   const end = masterSummaryEndDate.value;
   let query = db.collection("lembur");
   if (sel !== 'all') {
@@ -1047,10 +1042,10 @@ function tampilkanMasterSummary(){
     for (const [pic, data] of Object.entries(usersData)) {
       const avg = data.totalEntry ? (data.totalJam / data.totalEntry).toFixed(2) : 0;
       summaryRows.push({
-        pic, 
-        totalJam: data.totalJam.toFixed(2), 
-        totalEntry: data.totalEntry, 
-        avg, 
+        pic,
+        totalJam: data.totalJam.toFixed(2),
+        totalEntry: data.totalEntry,
+        avg,
         lastUpdate: data.lastUpdate
       });
       labels.push(pic);
@@ -1086,11 +1081,9 @@ function loadPICList(){
         picList.push(userData.email);
       }
     });
-    
     // Update dropdown untuk edit password PIC
     editPicEmail.innerHTML = '<option value="">-- Pilih PIC --</option>';
     picList.forEach(email => editPicEmail.innerHTML += `<option value="${email}">${email}</option>`);
-    
     // Dropdown untuk filter Admin dan Master
     adminFilterPic.innerHTML = '<option value="all">Select All</option>';
     masterOutputPic.innerHTML = '<option value="all">Select All</option>';
@@ -1127,18 +1120,15 @@ function tambahPIC(){
   const email = newPicEmail.value;
   const password = newPicPass.value;
   const role = 'pic';
-  
   if (!name || !email || !password) {
     settingPesan.textContent = 'Nama, email, dan password harus diisi!';
     settingPesan.style.color = '#e74c3c';
     return;
   }
-  
   // Buat user baru di Firebase Auth
   auth.createUserWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const user = userCredential.user;
-      
       // Simpan data user ke Firestore
       return db.collection("users").doc(user.uid).set({
         name: name,
@@ -1150,12 +1140,10 @@ function tambahPIC(){
     .then(() => {
       settingPesan.textContent = '✅ PIC berhasil ditambahkan!';
       settingPesan.style.color = '#27ae60';
-      
       // Reset form
       newPicName.value = '';
       newPicEmail.value = '';
       newPicPass.value = '';
-      
       // Refresh daftar user
       loadPICList();
       tampilkanDaftarPassword();
@@ -1169,20 +1157,16 @@ function tambahPIC(){
 function editPasswordPIC(){
   const email = editPicEmail.value;
   const newPassword = editPicPass.value;
-  
   if (!email || !newPassword) {
     settingPesan.textContent = 'Pilih PIC dan isi password baru!';
     settingPesan.style.color = '#e74c3c';
     return;
   }
-  
   // Untuk mengubah password, kita perlu mendapatkan user berdasarkan email
   // Catatan: Di production, sebaiknya gunakan Firebase Admin SDK di server
   // karena mengubah password user lain memerlukan autentikasi admin
-  
   settingPesan.textContent = 'Fitur ini memerlukan implementasi Firebase Admin SDK di server.';
   settingPesan.style.color = '#e74c3c';
-  
   // Reset form
   editPicEmail.value = '';
   editPicPass.value = '';
@@ -1202,7 +1186,6 @@ function editPICName(userId, currentEmail){
 }
 function deletePIC(userId, email){
   if (!confirm(`Yakin ingin menghapus user ${email}?`)) return;
-  
   // Hapus dari Firestore
   db.collection("users").doc(userId).delete()
     .then(() => {
@@ -1231,23 +1214,19 @@ function saveNewPassword(){
   const newPassword = newPasswordInput.value;
   const confirmPassword = confirmNewPasswordInput.value;
   const userEmail = localStorage.getItem('userEmail');
-  
   if (!currentPassword || !newPassword || !confirmPassword) {
     changePasswordMessage.textContent = 'Semua field harus diisi!';
     changePasswordMessage.style.color = '#e74c3c';
     return;
   }
-  
   if (newPassword !== confirmPassword) {
     changePasswordMessage.textContent = 'Password baru dan konfirmasi tidak cocok!';
     changePasswordMessage.style.color = '#e74c3c';
     return;
   }
-  
   // Re-autentikasi user
   const credential = firebase.auth.EmailAuthProvider.credential(userEmail, currentPassword);
   const user = auth.currentUser;
-  
   user.reauthenticateWithCredential(credential)
     .then(() => {
       // Update password
@@ -1271,7 +1250,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Initialize Firebase sudah dilakukan di atas
   // hide sidebar initially (before login)
   sidebar.classList.add('hidden');
-  
   // Cek apakah user sudah login
   auth.onAuthStateChanged((user) => {
     if (user) {
@@ -1281,13 +1259,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
           if (doc.exists) {
             const userData = doc.data();
             currentUserData = userData;
-            
             // Simpan informasi user di localStorage
             localStorage.setItem('loggedInUser', userData.name || user.email);
             localStorage.setItem('userEmail', user.email);
             localStorage.setItem('userRole', userData.role || 'pic');
             localStorage.setItem('userId', user.uid);
-            
             showAppAfterLogin();
           }
         });
@@ -1296,10 +1272,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       loginSection.classList.remove('hidden');
     }
   });
-  
   // generate initial plant selects
   generatePlantDropdowns();
-  
   // event bindings
   btnLogin.addEventListener('click', login);
   btnLogout.addEventListener('click', logout);
@@ -1312,39 +1286,31 @@ document.addEventListener('DOMContentLoaded', ()=>{
   btnMasterSummaryFilter.addEventListener('click', tampilkanMasterSummary);
   btnAddPic.addEventListener('click', tambahPIC);
   btnEditPic.addEventListener('click', editPasswordPIC);
-  
   // Event untuk tombol ganti password PIC
   btnChangePasswordPic.addEventListener('click', openChangePasswordModal);
   changePasswordCancel.addEventListener('click', closeChangePasswordModal);
   changePasswordSave.addEventListener('click', saveNewPassword);
-  
   // Tutup modal jika klik di luar
   changePasswordModal.addEventListener('click', (e) => {
     if (e.target === changePasswordModal) closeChangePasswordModal();
   });
-  
   // totalPlant change -> regenerate plant inputs
   totalPlant.addEventListener('input', generatePlantDropdowns);
-  
   // sidebar toggle logic
   toggleBtn.addEventListener('click', ()=>{
     sidebar.classList.toggle('collapsed');
     setTimeout(positionToggleButton, 50);
   });
-  
   // initial position of toggle
   setTimeout(positionToggleButton, 100);
-  
   // sidebar menu navigation
   document.querySelectorAll('.sidebar-menu li').forEach(item => {
     if (item.dataset.tab) {
       item.addEventListener('click', (e) => {
         document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
         item.classList.add('active');
-        
         const tabName = item.dataset.tab;
         document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        
         if (tabName === 'rekap') {
           const userRole = localStorage.getItem('userRole');
           if (userRole === 'admin') {
@@ -1358,7 +1324,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
       });
     }
   });
-  
   // Folder toggle functionality
   document.querySelectorAll('.folder-toggle').forEach(item => {
     item.addEventListener('click', (e) => {
@@ -1368,12 +1333,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       submenu.classList.toggle('hidden');
     });
   });
-  
   // modal events
   editCancel.addEventListener('click', (e)=>{ e.preventDefault(); closeEditModal(); });
   editModal.addEventListener('click', (e)=>{ if(e.target === editModal) closeEditModal(); });
   editSave.addEventListener('click', (e)=>{ e.preventDefault(); saveEditedData(); });
-  
   // reposition toggle on window resize
   window.addEventListener('resize', ()=> setTimeout(positionToggleButton, 80));
 });
