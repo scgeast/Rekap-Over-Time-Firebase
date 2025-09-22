@@ -13,7 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <style>
   :root{
-    --primary:#3498db; --danger:#e74c3c; --success:#27ae60;
+    --primary:#3498db; --danger:#e74c3c; --success:#27ae60; --warning:#f39c12;
     --sidebar:#2c3e50; --text:#333; --bg:#f4f6f9;
     --sidebar-width:250px;
   }
@@ -50,19 +50,17 @@
   top: 12px;
   /* left will be updated by JS */
   z-index: 1100;
-  background: none;     /* Tidak ada latar belakang */
-  color: #000;          /* Warna ikon hitam */
-  border: none;         /* Tidak ada border */
+  background: none;
+  color: #000;
+  border: none;
   padding: 8px 10px;
   cursor: pointer;
-  font-size: 1.3em;     /* Sedikit lebih besar untuk visibilitas */
+  font-size: 1.3em;
 }
-/* Optional: Add subtle hover effect */
 #toggle-sidebar:hover {
-  color: #333; /* Slightly darker on hover */
+  color: #333;
 }
 /* ============ CSS BARU UNTUK TOGGLE FOLDER ============ */
-/* Toggle icon styling */
 .folder-toggle {
   display: flex;
   justify-content: space-between;
@@ -103,10 +101,11 @@
     border-radius:12px;
     box-shadow:0 10px 30px rgba(0,0,0,0.06);
   }
-  #login-section .form-group label{ font-size:0.8em; } /* login label lebih kecil */
+  #login-section .form-group label{ font-size:0.8em; }
   #login-section h1{ text-align:center; margin-bottom:16px; }
   .hidden{ display:none !important; }
   .success{ color:var(--success); font-weight:700; }
+  .error{ color:var(--danger); font-weight:700; }
   /* header-flex for title + total jam */
   .header-flex{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
   #total-jam-lembur{ background:#eef6ff; padding:8px 12px; border-radius:8px; font-weight:700; color:#15395b; }
@@ -123,46 +122,37 @@
     #toggle-sidebar{ top:10px; }
     #login-section{ margin:40px 16px; }
   }
-  /* ============ PENYESUAIAN MOBILE TAMBAHAN ============ */
   @media (max-width: 768px) {
-    /* Perbesar font dan padding di form */
     input, select, textarea, button {
-      font-size: 16px; /* Penting: mencegah zoom otomatis saat fokus */
+      font-size: 16px;
       padding: 12px;
       margin-bottom: 12px;
     }
-    /* Perbesar tombol utama */
     button {
       padding: 14px;
       font-size: 16px;
     }
-    /* Perbesar judul */
     h1 { font-size: 1.5rem; }
     h2 { font-size: 1.25rem; }
     h3 { font-size: 1.1rem; }
-    /* Perbesar toggle sidebar untuk mudah diklik */
     #toggle-sidebar {
       padding: 12px;
       font-size: 1.5em;
     }
-    /* Perbesar item menu sidebar */
     .sidebar-menu li {
       padding: 14px;
       font-size: 1rem;
     }
-    /* Perbesar modal */
     .modal {
       margin: 10px;
       padding: 16px;
     }
-    /* Pastikan tabel bisa di-scroll horizontal jika terlalu lebar */
     table {
       display: block;
       overflow-x: auto;
       white-space: nowrap;
     }
   }
-  /* ============ AKHIR PENYESUAIAN MOBILE ============ */
 </style>
 </head>
 <body>
@@ -170,17 +160,14 @@
 <div id="sidebar" class="">
   <div class="sidebar-header">
     <h3>📂 Menu</h3>
-    <!-- Toggle placed inside header so its vertical position is aligned; JS will move it horizontally -->
     <button id="toggle-sidebar" aria-label="Toggle sidebar">☰</button>
   </div>
   <ul class="sidebar-menu">
     <li data-tab="rekap" class="active"><span>📋</span>&nbsp;<span>Rekap Over Time</span></li>
-    <!-- Master Folder (Parent) -->
     <li class="folder-toggle admin-only" data-folder="master-folder">
       <span>📁</span>&nbsp;<span>Master</span>
-      <span class="toggle-icon">▼</span> <!-- Icon toggle -->
+      <span class="toggle-icon">▼</span>
     </li>
-    <!-- Submenu Master (Child) -->
     <ul id="master-folder" class="submenu admin-only hidden" style="list-style:none;padding-left:14px;margin-top:8px;">
       <li data-tab="master-output">→ Output Rekapan</li>
       <li data-tab="master-summary">→ Summary Over Time CDC</li>
@@ -189,8 +176,8 @@
   </ul>
   <div style="margin-top:auto;padding:12px;">
     <div style="margin-bottom:8px;"><strong>User:</strong> <span id="nama-user"></span></div>
-    <!-- Tombol Ganti Password untuk PIC -->
-    <button id="btn-change-password-pic" class="logout-btn" style="background:#f39c12; margin-bottom: 8px; display: none;">🔑 Ganti Password</button>
+    <div style="margin-bottom:8px;"><strong>Role:</strong> <span id="user-role"></span></div>
+    <button id="btn-change-password-pic" class="logout-btn" style="background:var(--warning); margin-bottom: 8px; display: none;">🔑 Ganti Password</button>
     <button id="btn-logout" class="logout-btn" style="background:var(--danger);">Logout</button>
   </div>
 </div>
@@ -202,7 +189,6 @@
       <h1>🔐 Rekap Over Time CDC EAST</h1>
       <div class="form-group">
         <label for="email">Email:</label>
-        <!-- GANTI: Dropdown username diganti dengan input email -->
         <input type="email" id="email" placeholder="Masukkan email Anda" />
       </div>
       <div class="form-group">
@@ -390,26 +376,26 @@
       <h1>📁 Master → Setting</h1>
       <h3>➕ Tambah PIC Baru</h3>
       <div class="row">
-        <div class="col"><label for="new-pic-name">Nama PIC Baru</label><input id="new-pic-name" /></div>
-        <div class="col"><label for="new-pic-pass">Password</label><input id="new-pic-pass" /></div>
+        <div class="col"><label for="new-pic-email">Email PIC Baru</label><input id="new-pic-email" type="email" placeholder="pic@example.com" /></div>
+        <div class="col"><label for="new-pic-pass">Password Awal</label><input id="new-pic-pass" type="password" /></div>
         <div class="col-shrink" style="align-self:flex-end;"><button id="btn-add-pic" style="width:auto;padding:10px 14px;">➕ Tambah PIC</button></div>
       </div>
       <h3>🔑 Ganti Password PIC</h3>
       <div class="row">
         <div class="col">
-          <label for="edit-pic-name">Pilih PIC</label>
-          <select id="edit-pic-name"><option value="">-- Pilih PIC --</option></select>
+          <label for="edit-pic-email">Pilih PIC</label>
+          <select id="edit-pic-email"><option value="">-- Pilih PIC --</option></select>
         </div>
         <div class="col">
-          <label for="edit-pic-pass">Password Baru</label>
-          <input id="edit-pic-pass" />
+          <label for="edit-pic-new-pass">Password Baru</label>
+          <input id="edit-pic-new-pass" type="password" />
         </div>
         <div class="col-shrink" style="align-self:flex-end;"><button id="btn-edit-pic" style="width:auto;padding:10px 14px;">🔄 Update Password</button></div>
       </div>
-      <h3>🔐 Daftar Password Semua PIC</h3>
+      <h3>👥 Daftar PIC</h3>
       <table class="password-table">
-        <thead><tr><th>Nama PIC</th><th>Password</th><th>Akses</th><th>Aksi</th></tr></thead>
-        <tbody id="password-list-body"></tbody>
+        <thead><tr><th>Email PIC</th><th>Aksi</th></tr></thead>
+        <tbody id="pic-list-body"></tbody>
       </table>
       <div id="setting-pesan" style="margin-top:12px;"></div>
     </div>
@@ -441,7 +427,7 @@
    ======================= */
 // GANTI DENGAN KONFIGURASI FIREBASE ANDA SENDIRI
 const firebaseConfig = {
-    apiKey: "AIzaSyDKKw1SyUrVEcE725-OxVXRW0N0ayyQa_I",
+    apiKey: "AlzaSyDKKw1SyUrVEcE725-OxVXRW0N0ayyQa_l", // <-- API Key yang benar dari screenshot Anda
     authDomain: "rekap-over-time.firebaseapp.com",
     projectId: "rekap-over-time",
     storageBucket: "rekap-over-time.firebasestorage.app",
@@ -464,7 +450,7 @@ try {
   console.log("Firestore persistence enabled with new settings");
 } catch (err) {
   console.log("Persistence settings failed: ", err);
-}  
+}
 /* =======================
    Data & DOM references
    ======================= */
@@ -474,9 +460,9 @@ const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('toggle-sidebar');
 const loginSection = document.getElementById('login-section');
 const namaUserSpan = document.getElementById('nama-user');
+const userRoleSpan = document.getElementById('user-role');
 const namaUserTitle = document.getElementById('nama-user-title');
-// const usernameSelect = document.getElementById('username'); // <-- Dihapus
-const emailInput = document.getElementById('email'); // <-- Ditambahkan
+const emailInput = document.getElementById('email'); // <-- Diubah dari usernameSelect
 const passwordInput = document.getElementById('password');
 const btnLogin = document.getElementById('btn-login');
 const btnLogout = document.getElementById('btn-logout');
@@ -517,13 +503,13 @@ const masterSummaryStartDate = document.getElementById('master-summary-start-dat
 const masterSummaryEndDate = document.getElementById('master-summary-end-date');
 const btnMasterSummaryFilter = document.getElementById('btn-master-summary-filter');
 const bodyMasterSummary = document.getElementById('body-master-summary');
-const newPicName = document.getElementById('new-pic-name');
+const newPicEmail = document.getElementById('new-pic-email'); // <-- Diubah
 const newPicPass = document.getElementById('new-pic-pass');
 const btnAddPic = document.getElementById('btn-add-pic');
-const editPicName = document.getElementById('edit-pic-name');
-const editPicPass = document.getElementById('edit-pic-pass');
+const editPicEmail = document.getElementById('edit-pic-email'); // <-- Diubah
+const editPicNewPass = document.getElementById('edit-pic-new-pass'); // <-- Diubah
 const btnEditPic = document.getElementById('btn-edit-pic');
-const passwordListBody = document.getElementById('password-list-body');
+const picListBody = document.getElementById('pic-list-body'); // <-- Diubah
 const settingPesan = document.getElementById('setting-pesan');
 const editModal = document.getElementById('edit-modal');
 const editTanggal = document.getElementById('edit-tanggal');
@@ -545,15 +531,10 @@ const changePasswordSave = document.getElementById('change-password-save');
 const changePasswordMessage = document.getElementById('change-password-message');
 let masterSummaryChart = null;
 let editingContext = null; // {id, pic}
-// Variabel untuk menyimpan listener Firebase
 let lemburListener = null;
 let adminListener = null;
 let masterOutputListener = null;
 /* ========== Helpers ========== */
-function initUsers(){ 
-  // Tidak perlu inisialisasi users di localStorage lagi
-  // Users akan diambil dari Firebase Auth
-}
 function generatePlantDropdowns(){
   plantDropdownsInline.innerHTML = '';
   const count = Math.max(0, parseInt(totalPlant.value) || 0);
@@ -585,31 +566,53 @@ function positionToggleButton(){
 /* ==========================
    Login / Logout / UI show
    ========================== */
-function login(){
-  // const username = usernameSelect.value; // <-- Dihapus
-  const email = emailInput.value; // <-- Diubah: ambil email
-  const password = passwordInput.value;
-  if(!email || !password){ 
-    document.getElementById('login-error').textContent = 'Isi email & password.'; // <-- Pesan diubah
-    return; 
+// Fungsi untuk mendapatkan role pengguna dari Firestore
+async function getUserRole(userEmail) {
+  try {
+    const userDoc = await db.collection("users").doc(userEmail).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      return userData.role || 'pic';
+    } else {
+      console.warn("Dokumen pengguna tidak ditemukan di Firestore:", userEmail);
+      return 'pic';
+    }
+  } catch (error) {
+    console.error("Error mendapatkan role pengguna:", error);
+    if (userEmail === 'bookingeast0@gmail.com') {
+        console.warn("Menggunakan fallback role 'admin' untuk email hardcoded.");
+        return 'admin';
+    }
+    return 'pic';
   }
-  // 🔥 PERUBAHAN DI SINI - langsung gunakan email sebagai email (bukan username)
-  auth.signInWithEmailAndPassword(email, password) // <-- Gunakan email
+}
+
+function login(){
+  const email = emailInput.value; // <-- Diubah dari usernameSelect.value
+  const password = passwordInput.value;
+  if(!email || !password){
+    document.getElementById('login-error').textContent = 'Isi email & password.';
+    return;
+  }
+  auth.signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const user = userCredential.user;
-      localStorage.setItem('loggedInUser', email); // <-- Simpan email
-      localStorage.setItem('loginTime', new Date().toISOString());
-      showAppAfterLogin();
+      return getUserRole(user.email).then(role => {
+        localStorage.setItem('loggedInUser', user.email);
+        localStorage.setItem('userRole', role); // <-- Simpan role
+        localStorage.setItem('loginTime', new Date().toISOString());
+        showAppAfterLogin();
+      });
     })
     .catch((error) => {
-      document.getElementById('login-error').textContent = 'Email atau password salah!'; // <-- Pesan diubah
+      document.getElementById('login-error').textContent = 'Email atau password salah!';
       console.error("Login error:", error);
     });
 }
 function logout(){
   auth.signOut().then(() => {
     localStorage.removeItem('loggedInUser');
-    // Hentikan semua listener Firebase
+    localStorage.removeItem('userRole'); // <-- Hapus role juga
     if (lemburListener) lemburListener();
     if (adminListener) adminListener();
     if (masterOutputListener) masterOutputListener();
@@ -618,48 +621,43 @@ function logout(){
 }
 function showAppAfterLogin(){
   const user = localStorage.getItem('loggedInUser');
-  if(!user) return;
-  // show sidebar and keep toggle visible
+  const role = localStorage.getItem('userRole'); // <-- Ambil role dari localStorage
+  if(!user || !role) return;
+
+  namaUserSpan.textContent = user;
+  userRoleSpan.textContent = role; // <-- Tampilkan role
+  namaUserTitle.textContent = user;
+
   document.getElementById('sidebar').classList.remove('hidden');
   toggleBtn.classList.remove('hidden');
-  // ensure sidebar not collapsed initially
   sidebar.classList.remove('collapsed');
-  // update user display
-  namaUserSpan.textContent = user;
-  namaUserTitle.textContent = user;
-  // hide login and show appropriate tab
   loginSection.classList.add('hidden');
-  // hide all tab contents first
   document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-  if(user === 'admin'){ // <-- Perlu disesuaikan jika 'admin' bukan email
+
+  if(role === 'admin'){
     document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'block');
     tabRekapAdmin.classList.remove('hidden');
     tampilkanDataAdmin();
     loadPICList();
-    tampilkanDaftarPassword();
-    // Sembunyikan tombol ganti password untuk PIC jika user adalah admin
     btnChangePasswordPic.style.display = 'none';
   } else {
     document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'none');
     tabRekapPic.classList.remove('hidden');
     generatePlantDropdowns();
-    // default tanggal = today
     const today = new Date().toISOString().slice(0,10);
     tanggalInput.value = today;
     filterStartDate.value = new Date(new Date().setMonth(new Date().getMonth()-1)).toISOString().slice(0,10);
     filterEndDate.value = today;
     tampilkanDataPIC();
-    // Tampilkan tombol ganti password untuk PIC
     btnChangePasswordPic.style.display = 'block';
   }
-  // default filter dates for masters
+
   const today = new Date().toISOString().slice(0,10);
   const oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth()-1);
   const oneMonthAgoStr = oneMonthAgo.toISOString().slice(0,10);
   adminFilterStartDate.value = oneMonthAgoStr; adminFilterEndDate.value = today;
   masterOutputStartDate.value = oneMonthAgoStr; masterOutputEndDate.value = today;
   masterSummaryStartDate.value = oneMonthAgoStr; masterSummaryEndDate.value = today;
-  // reposition toggle
   setTimeout(positionToggleButton, 60);
 }
 /* ========== PIC (save/display/export) ========== */
@@ -696,25 +694,22 @@ function simpanLembur(){
     updatedBy: user,
     pic: user
   };
-  // Simpan ke Firebase
   db.collection("lembur").add(data)
     .then((docRef) => {
-      pesan.textContent = '✅ Data berhasil disimpan.'; 
+      pesan.textContent = '✅ Data berhasil disimpan.';
       pesan.className='success';
-      // Clear form fields
-      jamMulai.value=''; 
-      jamSelesai.value=''; 
-      volumeInput.value=''; 
+      jamMulai.value='';
+      jamSelesai.value='';
+      volumeInput.value='';
       uraianTugas.value='';
       generatePlantDropdowns();
     })
     .catch((error) => {
       console.error("Error saving document: ", error);
-      pesan.textContent = '❌ Gagal menyimpan data.'; 
+      pesan.textContent = '❌ Gagal menyimpan data.';
       pesan.className='';
     });
 }
-/* display PIC data dengan real-time updates */
 function tampilkanDataPIC(){
   const user = localStorage.getItem('loggedInUser');
   if(!user) return;
@@ -723,16 +718,13 @@ function tampilkanDataPIC(){
   let query = db.collection("lembur")
     .where("pic", "==", user)
     .orderBy("tanggal", "desc");
-  // Terapkan filter tanggal jika ada
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  // Hapus listener sebelumnya jika ada
   if (lemburListener) {
     lemburListener();
   }
-  // Set up real-time listener
   lemburListener = query.onSnapshot((snapshot) => {
     const data = [];
     let totalJam = 0;
@@ -741,7 +733,6 @@ function tampilkanDataPIC(){
       data.push(item);
       totalJam += parseFloat(item.totalJam || 0);
     });
-    // Tampilkan data di tabel
     bodyTabelPic.innerHTML = '';
     data.forEach(it => {
       const tr = document.createElement('tr');
@@ -760,7 +751,6 @@ function tampilkanDataPIC(){
     console.error("Error getting documents: ", error);
   });
 }
-/* export PIC to Excel */
 function exportToExcel(){
   const user = localStorage.getItem('loggedInUser');
   if(!user) return alert('Login dulu');
@@ -779,15 +769,15 @@ function exportToExcel(){
     snapshot.forEach(doc => {
       const d = doc.data();
       ws.push([
-        d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam, 
-        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '', 
+        d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam,
+        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '',
         d.lastUpdate || '', d.updatedBy || ''
       ]);
     });
     const sheet = XLSX.utils.aoa_to_sheet(ws);
-    const wb = XLSX.utils.book_new(); 
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, sheet, 'Rekap');
-    XLSX.writeFile(wb, `Rekap_${user}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `Rekap_${user.replace(/[@.]/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
   });
 }
 /* ========== ADMIN (display/edit/delete) ========== */
@@ -796,20 +786,16 @@ function tampilkanDataAdmin(){
   const start = adminFilterStartDate.value;
   const end = adminFilterEndDate.value;
   let query = db.collection("lembur").orderBy("tanggal", "desc");
-  // Filter berdasarkan PIC jika dipilih
   if (selected !== 'all') {
     query = query.where("pic", "==", selected);
   }
-  // Filter berdasarkan tanggal
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  // Hapus listener sebelumnya jika ada
   if (adminListener) {
     adminListener();
   }
-  // Set up real-time listener
   adminListener = query.onSnapshot((snapshot) => {
     const all = [];
     snapshot.forEach(doc => {
@@ -828,7 +814,6 @@ function tampilkanDataAdmin(){
     console.error("Error getting documents: ", error);
   });
 }
-/* open edit modal */
 function editDataAdmin(id, pic){
   db.collection("lembur").doc(id).get()
     .then((doc) => {
@@ -852,12 +837,10 @@ function editDataAdmin(id, pic){
       alert('Gagal mengambil data.');
     });
 }
-/* save edited data */
 function saveEditedData(){
   if(!editingContext) return;
   const { id, pic } = editingContext;
-  // calculate totalJam if times given
-  const mulai = editJamMulai.value; 
+  const mulai = editJamMulai.value;
   const selesai = editJamSelesai.value;
   let totalJam = calcTotalJamFromTimes(mulai, selesai).toFixed(2);
   const updatedData = {
@@ -874,25 +857,21 @@ function saveEditedData(){
   db.collection("lembur").doc(id).update(updatedData)
     .then(() => {
       closeEditModal();
-      // Data akan otomatis terupdate melalui listener yang sudah aktif
     })
     .catch((error) => {
       console.error("Error updating document:", error);
       alert('Gagal mengupdate data.');
     });
 }
-/* close modal */
-function closeEditModal(){ 
-  editingContext=null; 
-  editModal.classList.remove('show'); 
-  editModal.style.display='none'; 
+function closeEditModal(){
+  editingContext=null;
+  editModal.classList.remove('show');
+  editModal.style.display='none';
 }
-/* delete data */
 function deleteDataAdmin(id, pic){
   if(!confirm('Yakin mau hapus data ini?')) return;
   db.collection("lembur").doc(id).delete()
     .then(() => {
-      // Data akan otomatis terupdate melalui listener yang sudah aktif
     })
     .catch((error) => {
       console.error("Error deleting document:", error);
@@ -902,7 +881,7 @@ function deleteDataAdmin(id, pic){
 /* ========== MASTER OUTPUT / SUMMARY ========== */
 function tampilkanMasterOutput(){
   const sel = masterOutputPic.value || 'all';
-  const start = masterOutputStartDate.value; 
+  const start = masterOutputStartDate.value;
   const end = masterOutputEndDate.value;
   let query = db.collection("lembur").orderBy("tanggal", "desc");
   if (sel !== 'all') {
@@ -912,11 +891,9 @@ function tampilkanMasterOutput(){
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  // Hapus listener sebelumnya jika ada
   if (masterOutputListener) {
     masterOutputListener();
   }
-  // Set up real-time listener
   masterOutputListener = query.onSnapshot((snapshot) => {
     const all = [];
     snapshot.forEach(doc => {
@@ -934,10 +911,9 @@ function tampilkanMasterOutput(){
     console.error("Error getting documents: ", error);
   });
 }
-/* Master Summary */
 function tampilkanMasterSummary(){
   const sel = masterSummaryPic.value || 'all';
-  const start = masterSummaryStartDate.value; 
+  const start = masterSummaryStartDate.value;
   const end = masterSummaryEndDate.value;
   let query = db.collection("lembur");
   if (sel !== 'all') {
@@ -961,7 +937,6 @@ function tampilkanMasterSummary(){
       }
       usersData[pic].totalJam += parseFloat(data.totalJam || 0);
       usersData[pic].totalEntry += 1;
-      // Update lastUpdate jika lebih baru
       if (data.lastUpdate && data.lastUpdate > usersData[pic].lastUpdate) {
         usersData[pic].lastUpdate = data.lastUpdate;
       }
@@ -972,10 +947,10 @@ function tampilkanMasterSummary(){
     for (const [pic, data] of Object.entries(usersData)) {
       const avg = data.totalEntry ? (data.totalJam / data.totalEntry).toFixed(2) : 0;
       summaryRows.push({
-        pic, 
-        totalJam: data.totalJam.toFixed(2), 
-        totalEntry: data.totalEntry, 
-        avg, 
+        pic,
+        totalJam: data.totalJam.toFixed(2),
+        totalEntry: data.totalEntry,
+        avg,
         lastUpdate: data.lastUpdate
       });
       labels.push(pic);
@@ -990,7 +965,6 @@ function tampilkanMasterSummary(){
     renderMasterSummaryChart(labels, dataVals);
   });
 }
-/* Chart */
 function renderMasterSummaryChart(labels, data){
   const ctx = document.getElementById('masterSummaryChart').getContext('2d');
   if(masterSummaryChart) masterSummaryChart.destroy();
@@ -1002,48 +976,145 @@ function renderMasterSummaryChart(labels, data){
 }
 /* ========== SETTING (users) ========== */
 function loadPICList(){
-  // Untuk Firebase, kita akan mengambil daftar user dari Firestore
-  // Sementara kita gunakan cara lama dengan asumsi data user masih di localStorage
-  const users = JSON.parse(localStorage.getItem('app_users')||'{}');
-  const allUsers = Object.keys(users);
-  const picList = allUsers.filter(n=>n!=='admin');
-  // Update dropdown login - DIHAPUS karena sekarang pakai input email
-  // usernameSelect.innerHTML = '<option value="">-- Pilih Nama --</option>';
-  // allUsers.forEach(n => {
-  //   usernameSelect.innerHTML += `<option value="${n}">${n}</option>`;
-  // });
-  // const loggedInUser = localStorage.getItem('loggedInUser');
-  // if (loggedInUser && allUsers.includes(loggedInUser)) {
-  //   usernameSelect.value = loggedInUser;
-  // }
-  // Update dropdown untuk edit password PIC
-  editPicName.innerHTML = '<option value="">-- Pilih PIC --</option>';
-  picList.forEach(n => editPicName.innerHTML += `<option value="${n}">${n}</option>`);
-  // Dropdown untuk filter Admin dan Master
+  editPicEmail.innerHTML = '<option value="">-- Pilih PIC --</option>';
   adminFilterPic.innerHTML = '<option value="all">Select All</option>';
   masterOutputPic.innerHTML = '<option value="all">Select All</option>';
   masterSummaryPic.innerHTML = '<option value="all">Select All</option>';
-  picList.forEach(n=>{
-    adminFilterPic.innerHTML += `<option>${n}</option>`;
-    masterOutputPic.innerHTML += `<option>${n}</option>`;
-    masterSummaryPic.innerHTML += `<option>${n}</option>`;
-  });
+  picListBody.innerHTML = '';
+
+  db.collection("users").where("role", "==", "pic").get()
+    .then((querySnapshot) => {
+      const picEmails = [];
+      querySnapshot.forEach((doc) => {
+        const email = doc.id;
+        const data = doc.data();
+        picEmails.push(email);
+
+        editPicEmail.innerHTML += `<option value="${email}">${email}</option>`;
+        adminFilterPic.innerHTML += `<option value="${email}">${email}</option>`;
+        masterOutputPic.innerHTML += `<option value="${email}">${email}</option>`;
+        masterSummaryPic.innerHTML += `<option value="${email}">${email}</option>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${email}</td>
+          <td>
+            <button onclick="resetPasswordPIC('${email}')" style="background:var(--warning); padding: 4px 8px; font-size: 0.8rem; margin-right: 4px;">🔄 Reset Pass</button>
+            <button onclick="deletePIC('${email}')" style="background:var(--danger); padding: 4px 8px; font-size: 0.8rem;">🗑️ Hapus</button>
+          </td>
+        `;
+        picListBody.appendChild(tr);
+      });
+
+      if (picEmails.length === 0) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td colspan="2" style="text-align:center;">Tidak ada PIC terdaftar.</td>`;
+          picListBody.appendChild(tr);
+      }
+
+    })
+    .catch((error) => {
+      console.error("Error mendapatkan daftar PIC: ", error);
+      settingPesan.textContent = '❌ Gagal memuat daftar PIC.';
+      settingPesan.className = 'error';
+      picListBody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:var(--danger);">Error memuat daftar PIC.</td></tr>`;
+    });
 }
-// ... (kode lainnya tetap sama)
+
+function tambahPIC(){
+  const email = newPicEmail.value.trim();
+  const password = newPicPass.value;
+
+  if (!email || !password) {
+    settingPesan.textContent = '❌ Email dan password harus diisi.';
+    settingPesan.className = 'error';
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    settingPesan.textContent = '❌ Format email tidak valid.';
+    settingPesan.className = 'error';
+    return;
+  }
+
+  firebase.auth().createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      return db.collection("users").doc(email).set({
+        role: "pic",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    })
+    .then(() => {
+      settingPesan.textContent = `✅ PIC ${email} berhasil ditambahkan.`;
+      settingPesan.className = 'success';
+      newPicEmail.value = '';
+      newPicPass.value = '';
+      loadPICList();
+    })
+    .catch((error) => {
+      console.error("Error menambah PIC: ", error);
+      let errorMessage = '❌ Gagal menambah PIC.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = '❌ Email sudah digunakan.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = '❌ Format email tidak valid.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = '❌ Password terlalu lemah.';
+      }
+      settingPesan.textContent = errorMessage;
+      settingPesan.className = 'error';
+    });
+}
+
+function resetPasswordPIC(email) {
+  if (!email || !confirm(`Kirim email reset password ke ${email}?`)) {
+    return;
+  }
+
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      settingPesan.textContent = `✅ Email reset password telah dikirim ke ${email}.`;
+      settingPesan.className = 'success';
+    })
+    .catch((error) => {
+      console.error("Error mengirim email reset password:", error);
+      let errorMessage = '❌ Gagal mengirim email reset password.';
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = '❌ Pengguna tidak ditemukan.';
+      }
+      settingPesan.textContent = errorMessage;
+      settingPesan.className = 'error';
+    });
+}
+
+function deletePIC(email) {
+  if (!email || !confirm(`Yakin ingin menghapus PIC ${email}? Ini akan menghapus akunnya secara permanen.`)) {
+    return;
+  }
+
+  db.collection("users").doc(email).delete()
+    .then(() => {
+      settingPesan.textContent = `✅ PIC ${email} berhasil dihapus dari sistem.`;
+      settingPesan.className = 'success';
+      loadPICList();
+    })
+    .catch((error) => {
+      console.error("Error menghapus PIC dari Firestore:", error);
+      settingPesan.textContent = '❌ Gagal menghapus PIC.';
+      settingPesan.className = 'error';
+    });
+}
+
 /* ===========================
    Event bindings & init
    =========================== */
 document.addEventListener('DOMContentLoaded', ()=>{
-  // Initialize Firebase sudah dilakukan di atas
-  // hide sidebar initially (before login)
+  firebase.initializeApp(firebaseConfig);
   sidebar.classList.add('hidden');
-  // Hapus status login saat halaman dimuat agar selalu ke login screen
-  // localStorage.removeItem('loggedInUser'); // <-- Dikomentari agar bisa tetap login
-  // generate initial plant selects
   generatePlantDropdowns();
-  // Isi dropdown login sejak awal - DIHAPUS karena sekarang pakai input email
-  // loadPICList(); 
-  // event bindings
+
   btnLogin.addEventListener('click', login);
   btnLogout.addEventListener('click', logout);
   btnSimpan.addEventListener('click', simpanLembur);
@@ -1054,45 +1125,179 @@ document.addEventListener('DOMContentLoaded', ()=>{
   btnMasterOutputExport.addEventListener('click', exportMasterOutputToExcel);
   btnMasterSummaryFilter.addEventListener('click', tampilkanMasterSummary);
   btnAddPic.addEventListener('click', tambahPIC);
-  btnEditPic.addEventListener('click', editPasswordPIC);
-  // Event untuk tombol ganti password PIC
-  btnChangePasswordPic.addEventListener('click', openChangePasswordModal);
-  changePasswordCancel.addEventListener('click', closeChangePasswordModal);
-  changePasswordSave.addEventListener('click', saveNewPassword);
-  // Tutup modal jika klik di luar
-  changePasswordModal.addEventListener('click', (e) => {
-    if (e.target === changePasswordModal) closeChangePasswordModal();
+  btnEditPic.addEventListener('click', () => {
+      const email = editPicEmail.value;
+      const newPassword = editPicNewPass.value;
+      if (!email) {
+          settingPesan.textContent = '❌ Pilih PIC terlebih dahulu.';
+          settingPesan.className = 'error';
+          return;
+      }
+      if (!newPassword) {
+          settingPesan.textContent = '❌ Masukkan password baru.';
+          settingPesan.className = 'error';
+          return;
+      }
+      resetPasswordPIC(email); // Gunakan fungsi reset yang sudah ada
+      editPicEmail.value = '';
+      editPicNewPass.value = '';
   });
-  // totalPlant change -> regenerate plant inputs
+
+  btnChangePasswordPic.addEventListener('click', () => {
+      changePasswordMessage.textContent = '';
+      currentPasswordInput.value = '';
+      newPasswordInput.value = '';
+      confirmNewPasswordInput.value = '';
+      changePasswordModal.classList.add('show');
+      changePasswordModal.style.display = 'flex';
+      changePasswordModal.setAttribute('aria-hidden', 'false');
+  });
+  changePasswordCancel.addEventListener('click', () => {
+      changePasswordModal.classList.remove('show');
+      changePasswordModal.style.display = 'none';
+      changePasswordModal.setAttribute('aria-hidden', 'true');
+  });
+  changePasswordSave.addEventListener('click', () => {
+      const email = localStorage.getItem('loggedInUser');
+      const currentPassword = currentPasswordInput.value;
+      const newPassword = newPasswordInput.value;
+      const confirmNewPassword = confirmNewPasswordInput.value;
+
+      if (!email) {
+          changePasswordMessage.textContent = '❌ Pengguna tidak dikenali.';
+          changePasswordMessage.style.color = '#c0392b';
+          return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+          changePasswordMessage.textContent = '❌ Password baru dan konfirmasi tidak cocok.';
+          changePasswordMessage.style.color = '#c0392b';
+          return;
+      }
+
+      if (newPassword.length < 6) {
+          changePasswordMessage.textContent = '❌ Password baru harus minimal 6 karakter.';
+          changePasswordMessage.style.color = '#c0392b';
+          return;
+      }
+
+      const credential = firebase.auth.EmailAuthProvider.credential(email, currentPassword);
+      const user = auth.currentUser;
+
+      user.reauthenticateWithCredential(credential)
+          .then(() => {
+              return user.updatePassword(newPassword);
+          })
+          .then(() => {
+              changePasswordMessage.textContent = '✅ Password berhasil diubah.';
+              changePasswordMessage.style.color = '#27ae60';
+              setTimeout(() => {
+                  changePasswordModal.classList.remove('show');
+                  changePasswordModal.style.display = 'none';
+                  changePasswordModal.setAttribute('aria-hidden', 'true');
+              }, 1500);
+          })
+          .catch((error) => {
+              console.error("Error changing password:", error);
+              let errorMessage = '❌ Gagal mengganti password.';
+              if (error.code === 'auth/wrong-password') {
+                  errorMessage = '❌ Password lama salah.';
+              } else if (error.code === 'auth/too-many-requests') {
+                  errorMessage = '❌ Terlalu banyak permintaan. Coba lagi nanti.';
+              }
+              changePasswordMessage.textContent = errorMessage;
+              changePasswordMessage.style.color = '#c0392b';
+          });
+  });
+  changePasswordModal.addEventListener('click', (e) => {
+    if (e.target === changePasswordModal) {
+        changePasswordModal.classList.remove('show');
+        changePasswordModal.style.display = 'none';
+        changePasswordModal.setAttribute('aria-hidden', 'true');
+    }
+  });
+
   totalPlant.addEventListener('input', generatePlantDropdowns);
-  // sidebar toggle logic
   toggleBtn.addEventListener('click', ()=>{
     sidebar.classList.toggle('collapsed');
     setTimeout(positionToggleButton, 50);
   });
-  // initial position of toggle
   setTimeout(positionToggleButton, 100);
-  // sidebar menu navigation
+
   document.querySelectorAll('.sidebar-menu li').forEach(item => {
     item.addEventListener('click', (e) => {
-      // ... (kode sidebar navigation tetap sama)
+      if (item.classList.contains('folder-toggle')) {
+        const folderId = item.getAttribute('data-folder');
+        const submenu = document.getElementById(folderId);
+        item.classList.toggle('open');
+        submenu.classList.toggle('hidden');
+      } else if (item.hasAttribute('data-tab')) {
+        const tabName = item.getAttribute('data-tab');
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+        if(tabName === 'rekap') {
+            const user = localStorage.getItem('loggedInUser');
+            const role = localStorage.getItem('userRole');
+            if(role === 'admin') {
+                tabRekapAdmin.classList.remove('hidden');
+                tampilkanDataAdmin();
+            } else {
+                tabRekapPic.classList.remove('hidden');
+                tampilkanDataPIC();
+            }
+        }
+        if(tabName === 'master-output') tampilkanMasterOutput();
+        if(tabName === 'master-summary') tampilkanMasterSummary();
+        if(tabName === 'master-setting') loadPICList();
+      }
     });
   });
-  // modal events
+
   editCancel.addEventListener('click', (e)=>{ e.preventDefault(); closeEditModal(); });
   editModal.addEventListener('click', (e)=>{ if(e.target === editModal) closeEditModal(); });
   editSave.addEventListener('click', (e)=>{ e.preventDefault(); saveEditedData(); });
-  // Cek apakah masih ada pengguna yang login
-  if(localStorage.getItem('loggedInUser')) {
+
+  if(localStorage.getItem('loggedInUser') && localStorage.getItem('userRole')) {
     showAppAfterLogin();
   } else {
-    // Pastikan login section ditampilkan
     loginSection.classList.remove('hidden');
   }
-  // reposition toggle on window resize
   window.addEventListener('resize', ()=> setTimeout(positionToggleButton, 80));
 });
-/* Expose some functions to global for inline onclick handlers */
+
+function exportMasterOutputToExcel() {
+  const sel = masterOutputPic.value || 'all';
+  const start = masterOutputStartDate.value;
+  const end = masterOutputEndDate.value;
+  let query = db.collection("lembur").orderBy("tanggal", "desc");
+  if (sel !== 'all') {
+    query = query.where("pic", "==", sel);
+  }
+  if (start && end) {
+    query = query.where("tanggal", ">=", start)
+                .where("tanggal", "<=", end);
+  }
+  query.get().then((snapshot) => {
+    if(snapshot.empty) return alert('Tidak ada data.');
+    const ws = [['PIC','Tanggal','Jam Mulai','Jam Selesai','Total Jam','Plant','Volume','Uraian','Last Update']];
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      ws.push([
+        d.pic, d.tanggal, d.jamMulai, d.jamSelesai, d.totalJam,
+        (d.plant ? d.plant.join(', ') : ''), d.volume || '', d.uraianTugas || '',
+        d.lastUpdate || ''
+      ]);
+    });
+    const sheet = XLSX.utils.aoa_to_sheet(ws);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, 'Master_Output');
+    XLSX.writeFile(wb, `Master_Output_Rekap_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }).catch(err => {
+      console.error("Error exporting Master Output:", err);
+      alert('Gagal mengekspor data.');
+  });
+}
+
 window.editDataAdmin = editDataAdmin;
 window.deleteDataAdmin = deleteDataAdmin;
 window.exportToExcel = exportToExcel;
@@ -1101,7 +1306,6 @@ window.tampilkanDataAdmin = tampilkanDataAdmin;
 window.tampilkanDataPIC = tampilkanDataPIC;
 window.tampilkanMasterOutput = tampilkanMasterOutput;
 window.tampilkanMasterSummary = tampilkanMasterSummary;
-window.editPICName = editPICName;
 window.deletePIC = deletePIC;
 </script>
 </body>
