@@ -598,22 +598,21 @@ function positionToggleButton(){
 function login(){
   const username = usernameSelect.value;
   const password = passwordInput.value;
+  
   if(!username || !password){ 
     document.getElementById('login-error').textContent = 'Isi username & password.'; 
     return; 
   }
   
-  // Sign in dengan Firebase Auth
-  auth.signInWithEmailAndPassword(`${username}@cdceast.com`, password)
+  // 🔥 PERUBAHAN DI SINI - langsung gunakan username sebagai email
+  auth.signInWithEmailAndPassword(username, password)
     .then((userCredential) => {
-      // Login berhasil
       const user = userCredential.user;
       localStorage.setItem('loggedInUser', username);
       localStorage.setItem('loginTime', new Date().toISOString());
       showAppAfterLogin();
     })
     .catch((error) => {
-      // Handle errors
       document.getElementById('login-error').textContent = 'Username atau password salah!';
       console.error("Login error:", error);
     });
