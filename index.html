@@ -465,10 +465,18 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 
 // Enable offline persistence
-db.enablePersistence()
-  .catch((err) => {
-    console.log("Persistence failed: ", err);
-  });
+const firestoreSettings = {
+  cache: {
+    sizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+  }
+};
+
+try {
+  db.settings(firestoreSettings);
+  console.log("Firestore persistence enabled with new settings");
+} catch (err) {
+  console.log("Persistence settings failed: ", err);
+}  
 
 /* =======================
    Data & DOM references
