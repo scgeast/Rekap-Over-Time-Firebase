@@ -123,7 +123,6 @@
     #toggle-sidebar{ top:10px; }
     #login-section{ margin:40px 16px; }
   }
-
   /* ============ PENYESUAIAN MOBILE TAMBAHAN ============ */
   @media (max-width: 768px) {
     /* Perbesar font dan padding di form */
@@ -132,36 +131,30 @@
       padding: 12px;
       margin-bottom: 12px;
     }
-
     /* Perbesar tombol utama */
     button {
       padding: 14px;
       font-size: 16px;
     }
-
     /* Perbesar judul */
     h1 { font-size: 1.5rem; }
     h2 { font-size: 1.25rem; }
     h3 { font-size: 1.1rem; }
-
     /* Perbesar toggle sidebar untuk mudah diklik */
     #toggle-sidebar {
       padding: 12px;
       font-size: 1.5em;
     }
-
     /* Perbesar item menu sidebar */
     .sidebar-menu li {
       padding: 14px;
       font-size: 1rem;
     }
-
     /* Perbesar modal */
     .modal {
       margin: 10px;
       padding: 16px;
     }
-
     /* Pastikan tabel bisa di-scroll horizontal jika terlalu lebar */
     table {
       display: block;
@@ -208,11 +201,9 @@
     <div id="login-section">
       <h1>🔐 Rekap Over Time CDC EAST</h1>
       <div class="form-group">
-        <label for="username">Nama PIC / Admin:</label>
-        <select id="username">
-          <option value="">-- Pilih Nama --</option>
-          <!-- SEMUA OPTION STATIS DIHAPUS! -->
-        </select>
+        <label for="email">Email:</label>
+        <!-- GANTI: Dropdown username diganti dengan input email -->
+        <input type="email" id="email" placeholder="Masukkan email Anda" />
       </div>
       <div class="form-group">
         <label for="password">Password:</label>
@@ -458,26 +449,22 @@ const firebaseConfig = {
     appId: "1:949117774694.web:3a5794a2a2d4c8b9b4b6a7",
     measurementId: "G-EZRCBRZX67"
 };
-
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-
 // Enable offline persistence
 const firestoreSettings = {
   cache: {
     sizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
   }
 };
-
 try {
   db.settings(firestoreSettings);
   console.log("Firestore persistence enabled with new settings");
 } catch (err) {
   console.log("Persistence settings failed: ", err);
 }  
-
 /* =======================
    Data & DOM references
    ======================= */
@@ -488,7 +475,8 @@ const toggleBtn = document.getElementById('toggle-sidebar');
 const loginSection = document.getElementById('login-section');
 const namaUserSpan = document.getElementById('nama-user');
 const namaUserTitle = document.getElementById('nama-user-title');
-const usernameSelect = document.getElementById('username');
+// const usernameSelect = document.getElementById('username'); // <-- Dihapus
+const emailInput = document.getElementById('email'); // <-- Ditambahkan
 const passwordInput = document.getElementById('password');
 const btnLogin = document.getElementById('btn-login');
 const btnLogout = document.getElementById('btn-logout');
@@ -557,18 +545,15 @@ const changePasswordSave = document.getElementById('change-password-save');
 const changePasswordMessage = document.getElementById('change-password-message');
 let masterSummaryChart = null;
 let editingContext = null; // {id, pic}
-
 // Variabel untuk menyimpan listener Firebase
 let lemburListener = null;
 let adminListener = null;
 let masterOutputListener = null;
-
 /* ========== Helpers ========== */
 function initUsers(){ 
   // Tidak perlu inisialisasi users di localStorage lagi
   // Users akan diambil dari Firebase Auth
 }
-
 function generatePlantDropdowns(){
   plantDropdownsInline.innerHTML = '';
   const count = Math.max(0, parseInt(totalPlant.value) || 0);
@@ -580,7 +565,6 @@ function generatePlantDropdowns(){
     plantDropdownsInline.appendChild(s);
   }
 }
-
 function calcTotalJamFromTimes(mulai, selesai){
   try{
     const [h1,m1] = mulai.split(':').map(Number);
@@ -591,7 +575,6 @@ function calcTotalJamFromTimes(mulai, selesai){
     return (menit/60);
   }catch(e){ return 0; }
 }
-
 function positionToggleButton(){
   const sidebarRect = sidebar.getBoundingClientRect();
   const left = Math.max(sidebarRect.left + sidebarRect.width - 36, 8);
@@ -599,33 +582,30 @@ function positionToggleButton(){
   const top = sidebarRect.top + 12;
   toggleBtn.style.top = top + 'px';
 }
-
 /* ==========================
    Login / Logout / UI show
    ========================== */
 function login(){
-  const username = usernameSelect.value;
+  // const username = usernameSelect.value; // <-- Dihapus
+  const email = emailInput.value; // <-- Diubah: ambil email
   const password = passwordInput.value;
-  
-  if(!username || !password){ 
-    document.getElementById('login-error').textContent = 'Isi username & password.'; 
+  if(!email || !password){ 
+    document.getElementById('login-error').textContent = 'Isi email & password.'; // <-- Pesan diubah
     return; 
   }
-  
-  // 🔥 PERUBAHAN DI SINI - langsung gunakan username sebagai email
-  auth.signInWithEmailAndPassword(username, password)
+  // 🔥 PERUBAHAN DI SINI - langsung gunakan email sebagai email (bukan username)
+  auth.signInWithEmailAndPassword(email, password) // <-- Gunakan email
     .then((userCredential) => {
       const user = userCredential.user;
-      localStorage.setItem('loggedInUser', username);
+      localStorage.setItem('loggedInUser', email); // <-- Simpan email
       localStorage.setItem('loginTime', new Date().toISOString());
       showAppAfterLogin();
     })
     .catch((error) => {
-      document.getElementById('login-error').textContent = 'Username atau password salah!';
+      document.getElementById('login-error').textContent = 'Email atau password salah!'; // <-- Pesan diubah
       console.error("Login error:", error);
     });
 }
-
 function logout(){
   auth.signOut().then(() => {
     localStorage.removeItem('loggedInUser');
@@ -636,29 +616,22 @@ function logout(){
     location.reload();
   });
 }
-
 function showAppAfterLogin(){
   const user = localStorage.getItem('loggedInUser');
   if(!user) return;
-  
   // show sidebar and keep toggle visible
   document.getElementById('sidebar').classList.remove('hidden');
   toggleBtn.classList.remove('hidden');
-  
   // ensure sidebar not collapsed initially
   sidebar.classList.remove('collapsed');
-  
   // update user display
   namaUserSpan.textContent = user;
   namaUserTitle.textContent = user;
-  
   // hide login and show appropriate tab
   loginSection.classList.add('hidden');
-  
   // hide all tab contents first
   document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-  
-  if(user === 'admin'){
+  if(user === 'admin'){ // <-- Perlu disesuaikan jika 'admin' bukan email
     document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'block');
     tabRekapAdmin.classList.remove('hidden');
     tampilkanDataAdmin();
@@ -679,7 +652,6 @@ function showAppAfterLogin(){
     // Tampilkan tombol ganti password untuk PIC
     btnChangePasswordPic.style.display = 'block';
   }
-  
   // default filter dates for masters
   const today = new Date().toISOString().slice(0,10);
   const oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth()-1);
@@ -687,16 +659,13 @@ function showAppAfterLogin(){
   adminFilterStartDate.value = oneMonthAgoStr; adminFilterEndDate.value = today;
   masterOutputStartDate.value = oneMonthAgoStr; masterOutputEndDate.value = today;
   masterSummaryStartDate.value = oneMonthAgoStr; masterSummaryEndDate.value = today;
-  
   // reposition toggle
   setTimeout(positionToggleButton, 60);
 }
-
 /* ========== PIC (save/display/export) ========== */
 function simpanLembur(){
   const user = localStorage.getItem('loggedInUser');
   if(!user) { alert('Harus login dulu'); return; }
-  
   const tanggal = tanggalInput.value;
   const mulai = jamMulai.value;
   const selesai = jamSelesai.value;
@@ -705,18 +674,14 @@ function simpanLembur(){
   const volume = volumeInput.value;
   const uraian = uraianTugas.value;
   const plantSel = Array.from(document.querySelectorAll('.plant-select')).map(s=>s.value).filter(Boolean);
-  
   if(!tanggal || !mulai || !selesai){
     pesan.textContent = 'Tanggal & jam harus diisi!'; pesan.className=''; return;
   }
-  
   if(plantSel.length < tplant && tplant > 0){
     pesan.textContent = 'Isi semua Plant Name sesuai Total Plant.'; pesan.className=''; return;
   }
-  
   const totalJam = calcTotalJamFromTimes(mulai, selesai).toFixed(2);
   const now = new Date().toLocaleString('id-ID');
-  
   const data = {
     tanggal,
     jamMulai: mulai,
@@ -731,13 +696,11 @@ function simpanLembur(){
     updatedBy: user,
     pic: user
   };
-  
   // Simpan ke Firebase
   db.collection("lembur").add(data)
     .then((docRef) => {
       pesan.textContent = '✅ Data berhasil disimpan.'; 
       pesan.className='success';
-      
       // Clear form fields
       jamMulai.value=''; 
       jamSelesai.value=''; 
@@ -751,41 +714,33 @@ function simpanLembur(){
       pesan.className='';
     });
 }
-
 /* display PIC data dengan real-time updates */
 function tampilkanDataPIC(){
   const user = localStorage.getItem('loggedInUser');
   if(!user) return;
-  
   const start = filterStartDate.value;
   const end = filterEndDate.value;
-  
   let query = db.collection("lembur")
     .where("pic", "==", user)
     .orderBy("tanggal", "desc");
-  
   // Terapkan filter tanggal jika ada
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  
   // Hapus listener sebelumnya jika ada
   if (lemburListener) {
     lemburListener();
   }
-  
   // Set up real-time listener
   lemburListener = query.onSnapshot((snapshot) => {
     const data = [];
     let totalJam = 0;
-    
     snapshot.forEach((doc) => {
       const item = { id: doc.id, ...doc.data() };
       data.push(item);
       totalJam += parseFloat(item.totalJam || 0);
     });
-    
     // Tampilkan data di tabel
     bodyTabelPic.innerHTML = '';
     data.forEach(it => {
@@ -800,33 +755,26 @@ function tampilkanDataPIC(){
         <td>${it.lastUpdate || '-'}</td>`;
       bodyTabelPic.appendChild(tr);
     });
-    
     totalJamLabel.textContent = `Total Jam: ${totalJam.toFixed(2)}`;
   }, (error) => {
     console.error("Error getting documents: ", error);
   });
 }
-
 /* export PIC to Excel */
 function exportToExcel(){
   const user = localStorage.getItem('loggedInUser');
   if(!user) return alert('Login dulu');
-  
   const start = filterStartDate.value;
   const end = filterEndDate.value;
-  
   let query = db.collection("lembur")
     .where("pic", "==", user)
     .orderBy("tanggal", "desc");
-  
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  
   query.get().then((snapshot) => {
     if(snapshot.empty) return alert('Tidak ada data.');
-    
     const ws = [['Tanggal','Jam Mulai','Jam Selesai','Total Jam','Plant','Volume','Uraian','Last Update','Updated By']];
     snapshot.forEach(doc => {
       const d = doc.data();
@@ -836,45 +784,37 @@ function exportToExcel(){
         d.lastUpdate || '', d.updatedBy || ''
       ]);
     });
-    
     const sheet = XLSX.utils.aoa_to_sheet(ws);
     const wb = XLSX.utils.book_new(); 
     XLSX.utils.book_append_sheet(wb, sheet, 'Rekap');
     XLSX.writeFile(wb, `Rekap_${user}_${new Date().toISOString().slice(0,10)}.xlsx`);
   });
 }
-
 /* ========== ADMIN (display/edit/delete) ========== */
 function tampilkanDataAdmin(){
   const selected = adminFilterPic.value || 'all';
   const start = adminFilterStartDate.value;
   const end = adminFilterEndDate.value;
-  
   let query = db.collection("lembur").orderBy("tanggal", "desc");
-  
   // Filter berdasarkan PIC jika dipilih
   if (selected !== 'all') {
     query = query.where("pic", "==", selected);
   }
-  
   // Filter berdasarkan tanggal
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  
   // Hapus listener sebelumnya jika ada
   if (adminListener) {
     adminListener();
   }
-  
   // Set up real-time listener
   adminListener = query.onSnapshot((snapshot) => {
     const all = [];
     snapshot.forEach(doc => {
       all.push({ id: doc.id, ...doc.data() });
     });
-    
     bodyTabelAdmin.innerHTML = '';
     all.forEach(it => {
       const tr = document.createElement('tr');
@@ -888,7 +828,6 @@ function tampilkanDataAdmin(){
     console.error("Error getting documents: ", error);
   });
 }
-
 /* open edit modal */
 function editDataAdmin(id, pic){
   db.collection("lembur").doc(id).get()
@@ -897,7 +836,6 @@ function editDataAdmin(id, pic){
         alert('Data tidak ditemukan.');
         return;
       }
-      
       const item = doc.data();
       editingContext = { id, pic };
       editTanggal.value = item.tanggal || '';
@@ -914,17 +852,14 @@ function editDataAdmin(id, pic){
       alert('Gagal mengambil data.');
     });
 }
-
 /* save edited data */
 function saveEditedData(){
   if(!editingContext) return;
   const { id, pic } = editingContext;
-  
   // calculate totalJam if times given
   const mulai = editJamMulai.value; 
   const selesai = editJamSelesai.value;
   let totalJam = calcTotalJamFromTimes(mulai, selesai).toFixed(2);
-  
   const updatedData = {
     tanggal: editTanggal.value,
     jamMulai: editJamMulai.value,
@@ -936,7 +871,6 @@ function saveEditedData(){
     lastUpdate: new Date().toLocaleString('id-ID'),
     updatedBy: localStorage.getItem('loggedInUser') || pic
   };
-  
   db.collection("lembur").doc(id).update(updatedData)
     .then(() => {
       closeEditModal();
@@ -947,18 +881,15 @@ function saveEditedData(){
       alert('Gagal mengupdate data.');
     });
 }
-
 /* close modal */
 function closeEditModal(){ 
   editingContext=null; 
   editModal.classList.remove('show'); 
   editModal.style.display='none'; 
 }
-
 /* delete data */
 function deleteDataAdmin(id, pic){
   if(!confirm('Yakin mau hapus data ini?')) return;
-  
   db.collection("lembur").doc(id).delete()
     .then(() => {
       // Data akan otomatis terupdate melalui listener yang sudah aktif
@@ -968,36 +899,29 @@ function deleteDataAdmin(id, pic){
       alert('Gagal menghapus data.');
     });
 }
-
 /* ========== MASTER OUTPUT / SUMMARY ========== */
 function tampilkanMasterOutput(){
   const sel = masterOutputPic.value || 'all';
   const start = masterOutputStartDate.value; 
   const end = masterOutputEndDate.value;
-  
   let query = db.collection("lembur").orderBy("tanggal", "desc");
-  
   if (sel !== 'all') {
     query = query.where("pic", "==", sel);
   }
-  
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  
   // Hapus listener sebelumnya jika ada
   if (masterOutputListener) {
     masterOutputListener();
   }
-  
   // Set up real-time listener
   masterOutputListener = query.onSnapshot((snapshot) => {
     const all = [];
     snapshot.forEach(doc => {
       all.push({ id: doc.id, ...doc.data() });
     });
-    
     bodyMasterOutput.innerHTML = '';
     all.forEach(it => {
       const tr = document.createElement('tr');
@@ -1010,31 +934,24 @@ function tampilkanMasterOutput(){
     console.error("Error getting documents: ", error);
   });
 }
-
 /* Master Summary */
 function tampilkanMasterSummary(){
   const sel = masterSummaryPic.value || 'all';
   const start = masterSummaryStartDate.value; 
   const end = masterSummaryEndDate.value;
-  
   let query = db.collection("lembur");
-  
   if (sel !== 'all') {
     query = query.where("pic", "==", sel);
   }
-  
   if (start && end) {
     query = query.where("tanggal", ">=", start)
                 .where("tanggal", "<=", end);
   }
-  
   query.get().then((snapshot) => {
     const usersData = {};
-    
     snapshot.forEach(doc => {
       const data = doc.data();
       const pic = data.pic;
-      
       if (!usersData[pic]) {
         usersData[pic] = {
           totalJam: 0,
@@ -1042,20 +959,16 @@ function tampilkanMasterSummary(){
           lastUpdate: data.lastUpdate || '-'
         };
       }
-      
       usersData[pic].totalJam += parseFloat(data.totalJam || 0);
       usersData[pic].totalEntry += 1;
-      
       // Update lastUpdate jika lebih baru
       if (data.lastUpdate && data.lastUpdate > usersData[pic].lastUpdate) {
         usersData[pic].lastUpdate = data.lastUpdate;
       }
     });
-    
     const labels = [];
     const dataVals = [];
     const summaryRows = [];
-    
     for (const [pic, data] of Object.entries(usersData)) {
       const avg = data.totalEntry ? (data.totalJam / data.totalEntry).toFixed(2) : 0;
       summaryRows.push({
@@ -1065,22 +978,18 @@ function tampilkanMasterSummary(){
         avg, 
         lastUpdate: data.lastUpdate
       });
-      
       labels.push(pic);
       dataVals.push(parseFloat(data.totalJam.toFixed(2)));
     }
-    
     bodyMasterSummary.innerHTML = '';
     summaryRows.forEach(r => {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${r.pic}</td><td>${r.totalJam} jam</td><td>${r.totalEntry}</td><td>${r.avg} jam/hari</td><td>${r.lastUpdate}</td>`;
       bodyMasterSummary.appendChild(tr);
     });
-    
     renderMasterSummaryChart(labels, dataVals);
   });
 }
-
 /* Chart */
 function renderMasterSummaryChart(labels, data){
   const ctx = document.getElementById('masterSummaryChart').getContext('2d');
@@ -1091,7 +1000,6 @@ function renderMasterSummaryChart(labels, data){
     options:{ responsive:true, scales:{ y:{ beginAtZero:true, title:{ display:true, text:'Total Jam' } } } }
   });
 }
-
 /* ========== SETTING (users) ========== */
 function loadPICList(){
   // Untuk Firebase, kita akan mengambil daftar user dari Firestore
@@ -1099,22 +1007,18 @@ function loadPICList(){
   const users = JSON.parse(localStorage.getItem('app_users')||'{}');
   const allUsers = Object.keys(users);
   const picList = allUsers.filter(n=>n!=='admin');
-
-  // Update dropdown login
-  usernameSelect.innerHTML = '<option value="">-- Pilih Nama --</option>';
-  allUsers.forEach(n => {
-    usernameSelect.innerHTML += `<option value="${n}">${n}</option>`;
-  });
-  
-  const loggedInUser = localStorage.getItem('loggedInUser');
-  if (loggedInUser && allUsers.includes(loggedInUser)) {
-    usernameSelect.value = loggedInUser;
-  }
-
+  // Update dropdown login - DIHAPUS karena sekarang pakai input email
+  // usernameSelect.innerHTML = '<option value="">-- Pilih Nama --</option>';
+  // allUsers.forEach(n => {
+  //   usernameSelect.innerHTML += `<option value="${n}">${n}</option>`;
+  // });
+  // const loggedInUser = localStorage.getItem('loggedInUser');
+  // if (loggedInUser && allUsers.includes(loggedInUser)) {
+  //   usernameSelect.value = loggedInUser;
+  // }
   // Update dropdown untuk edit password PIC
   editPicName.innerHTML = '<option value="">-- Pilih PIC --</option>';
   picList.forEach(n => editPicName.innerHTML += `<option value="${n}">${n}</option>`);
-
   // Dropdown untuk filter Admin dan Master
   adminFilterPic.innerHTML = '<option value="all">Select All</option>';
   masterOutputPic.innerHTML = '<option value="all">Select All</option>';
@@ -1125,27 +1029,20 @@ function loadPICList(){
     masterSummaryPic.innerHTML += `<option>${n}</option>`;
   });
 }
-
 // ... (kode lainnya tetap sama)
-
 /* ===========================
    Event bindings & init
    =========================== */
 document.addEventListener('DOMContentLoaded', ()=>{
   // Initialize Firebase sudah dilakukan di atas
-  
   // hide sidebar initially (before login)
   sidebar.classList.add('hidden');
-  
   // Hapus status login saat halaman dimuat agar selalu ke login screen
-  localStorage.removeItem('loggedInUser');
-  
+  // localStorage.removeItem('loggedInUser'); // <-- Dikomentari agar bisa tetap login
   // generate initial plant selects
   generatePlantDropdowns();
-  
-  // Isi dropdown login sejak awal
-  loadPICList(); 
-  
+  // Isi dropdown login sejak awal - DIHAPUS karena sekarang pakai input email
+  // loadPICList(); 
   // event bindings
   btnLogin.addEventListener('click', login);
   btnLogout.addEventListener('click', logout);
@@ -1158,41 +1055,33 @@ document.addEventListener('DOMContentLoaded', ()=>{
   btnMasterSummaryFilter.addEventListener('click', tampilkanMasterSummary);
   btnAddPic.addEventListener('click', tambahPIC);
   btnEditPic.addEventListener('click', editPasswordPIC);
-  
   // Event untuk tombol ganti password PIC
   btnChangePasswordPic.addEventListener('click', openChangePasswordModal);
   changePasswordCancel.addEventListener('click', closeChangePasswordModal);
   changePasswordSave.addEventListener('click', saveNewPassword);
-  
   // Tutup modal jika klik di luar
   changePasswordModal.addEventListener('click', (e) => {
     if (e.target === changePasswordModal) closeChangePasswordModal();
   });
-  
   // totalPlant change -> regenerate plant inputs
   totalPlant.addEventListener('input', generatePlantDropdowns);
-  
   // sidebar toggle logic
   toggleBtn.addEventListener('click', ()=>{
     sidebar.classList.toggle('collapsed');
     setTimeout(positionToggleButton, 50);
   });
-  
   // initial position of toggle
   setTimeout(positionToggleButton, 100);
-  
   // sidebar menu navigation
   document.querySelectorAll('.sidebar-menu li').forEach(item => {
     item.addEventListener('click', (e) => {
       // ... (kode sidebar navigation tetap sama)
     });
   });
-  
   // modal events
   editCancel.addEventListener('click', (e)=>{ e.preventDefault(); closeEditModal(); });
   editModal.addEventListener('click', (e)=>{ if(e.target === editModal) closeEditModal(); });
   editSave.addEventListener('click', (e)=>{ e.preventDefault(); saveEditedData(); });
-  
   // Cek apakah masih ada pengguna yang login
   if(localStorage.getItem('loggedInUser')) {
     showAppAfterLogin();
@@ -1200,11 +1089,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     // Pastikan login section ditampilkan
     loginSection.classList.remove('hidden');
   }
-  
   // reposition toggle on window resize
   window.addEventListener('resize', ()=> setTimeout(positionToggleButton, 80));
 });
-
 /* Expose some functions to global for inline onclick handlers */
 window.editDataAdmin = editDataAdmin;
 window.deleteDataAdmin = deleteDataAdmin;
